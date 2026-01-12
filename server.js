@@ -1,7 +1,10 @@
 import "dotenv/config"
 import express from "express"
+import { connectToDB } from "./database/db.js"
 import logger from "./utils/logger.js"
 const app = express()
+
+connectToDB()
 
 app.use(express.json())
 
