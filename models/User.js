@@ -1,4 +1,3 @@
-import { required } from "joi";
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -25,6 +24,10 @@ const userSchema = new mongoose.Schema({
         trim: true
 
     },
+    role: {
+        type: String,
+        enum: []
+    },
     username: {
         type: String,
         required: true,
@@ -33,3 +36,7 @@ const userSchema = new mongoose.Schema({
         minlength: 6
     }
 }, { timestamps: true })
+
+const user = mongoose.model("User", userSchema)
+
+export default user
