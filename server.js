@@ -1,6 +1,7 @@
 import "dotenv/config"
 import express from "express"
 import { connectToDB } from "./database/db.js"
+import { userRouter } from "./routes/userRoutes.js"
 import helmet from "helmet"
 import Redis from "ioredis"
 import rateLimit from "express-rate-limit"
@@ -12,18 +13,18 @@ const app = express()
 
 const PORT = process.env.PORT || 3000
 
-const redisClient = new Redis({
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: process.env.REDIS_PORT || 6379
-})
+// const redisClient = new Redis({
+//     host: process.env.REDIS_HOST || "127.0.0.1",
+//     port: process.env.REDIS_PORT || 6379
+// })
 
-redisClient.on("connect", () => {
-    logger.info("Redis connected.")
-})
+// redisClient.on("connect", () => {
+//     logger.info("Redis connected.")
+// })
 
-redisClient.on("error", error => {
-    logger.error("Redis error", error)
-})
+// redisClient.on("error", error => {
+//     logger.error("Redis error", error)
+// })
 
 connectToDB()
 app.use(helmet())
@@ -47,6 +48,8 @@ const sensitivePoint = rateLimit({
 })
 
 app.use(errorHandler)
+
+app.use("/api/user", userRouter)
 
 app.listen(PORT, () => {
     logger.info(`Server now running on port ${PORT}`)

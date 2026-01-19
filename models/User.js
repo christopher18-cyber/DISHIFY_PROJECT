@@ -26,7 +26,8 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: []
+        enum: ["customer", "admin", "staff"],
+        default: "customer"
     },
     username: {
         type: String,
@@ -34,9 +35,15 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
         minlength: 6
+    },
+    phoneNo: {
+        type: String,
+        unique: true,
+        trim: true,
+        minlength: 10
     }
 }, { timestamps: true })
 
-const user = mongoose.model("User", userSchema)
+const User = mongoose.model("User", userSchema)
 
-export default user
+export default User
