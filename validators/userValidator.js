@@ -53,5 +53,5 @@ export function validateLoginUser(data) {
             .required()
     })
 
-    return schema
+    return schema.validate(data)
 }
