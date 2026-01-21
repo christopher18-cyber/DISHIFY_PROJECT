@@ -118,3 +118,140 @@ export async function loginUserCon(req, res) {
     }
 }
 
+
+export async function changePasswordCon(req, res) {
+    logger.info("Change password endpoint is hitted")
+    try {
+
+        // get the req.userInfo from the middleware
+        const userId = req.userInfo.id
+        // extract old and new password
+
+        const { oldpassword, newpassword } = req.body
+
+        // find the logged user
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            res.status(400).json({
+                success: false,
+                message: `User not found.`
+            })
+        } else {
+
+            const isMatchPassword = await bcrypt.compare(oldpassword, user.password)
+            if (!isMatchPassword) {
+                res.status(400).json({
+                    success: false,
+                    message: `Password is not correct, please try again.`
+                })
+            } else {
+                const salt = await bcrypt.genSalt(10)
+                const newHashedPassword = await bcrypt.hash(newpassword, salt)
+
+
+                user.password = newHashedPassword
+                await user.save()
+
+                res.status(200).json({
+                    success: false,
+                    message: `Password changed successfully.`
+                })
+            }
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+export async function sendOtpForFogottenPasswordCon(req, res) {
+    logger.info("Send otp for user forgotten password endpoint is hitted")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+export async function sendOtpForRegisterCon(req, res) {
+    logger.info("Send otp for after registering endpoint is hitted.")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+export async function userDashBoardCon(req, res) {
+    logger.info("User dashboard endpoint hitted.")
+    try { }
+    catch (err) {
+        logger.error("server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function orderPageCon(req, res) {
+    logger.info("User Order endpint hitted.")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+export async function userUploadProfileCon(req, res) {
+    logger.info("User upload image endpoint hitted")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+export async function changeProfilepictureCon(req, res) {
+    logger.info("User change profile picture endpoint hitted")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: `Server internal error.`
+        })
+    }
+}
+
+
+export async function forgottenPasswordCon(req, res) {
+    logger.info("User forgotten password endpoint is hitted")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: `Server internal error.`
+        })
+    }
+}
