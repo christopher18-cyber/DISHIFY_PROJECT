@@ -4,6 +4,34 @@ import logger from "../utils/logger.js";
 import { validateRegisterUserSchema, validateLoginUser } from "../validators/userValidator.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
+import { v4 as uuidv4 } from "uuid"
+import { generateOtp } from "../utils/generatorOtp.js";
+
+export async function startRegister(req, res) {
+    logger.info("Beginning of registration started.")
+    const { email } = req.body
+
+    if (!email) {
+        return res.status(400).json({
+            success: false,
+            message: "Email is required"
+        })
+    } else {
+        const existingUser = await User.findOne({ email })
+        if (existingUser) {
+            return res.status(409).json({
+                message: "Email already registered.",
+                success: false
+            })
+        } else {
+            // generate otp
+            const otp = generateOtp()
+            const hashed = await bcrypt.hash(otp, 10)
+
+            await OTP
+        }
+    }
+}
 
 export async function registerUserCon(req, res) {
     logger.info("Register user endpoint hitted")
@@ -124,7 +152,7 @@ export async function changePasswordCon(req, res) {
     try {
 
         // get the req.userInfo from the middleware
-        const userId = req.userInfo.id
+        const userId = req.userInfo.userId
         // extract old and new password
 
         const { oldpassword, newpassword } = req.body
@@ -155,7 +183,7 @@ export async function changePasswordCon(req, res) {
                 await user.save()
 
                 res.status(200).json({
-                    success: false,
+                    success: true,
                     message: `Password changed successfully.`
                 })
             }

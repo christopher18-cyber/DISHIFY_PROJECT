@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken"
+import logger from "../utils/logger.js"
 
 export const authMiddleware = (req, res, next) => {
     const authHeader = req.headers["authorization"]
@@ -14,8 +15,10 @@ export const authMiddleware = (req, res, next) => {
 
         try {
             const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY)
-            logger.info(decodedToken)
+            // logger.info(decodedToken)
             req.userInfo = decodedToken
+            logger.info(req.userInfo)
+            // logger.info(req.userInfo.email)
             next()
         }
         catch (err) {
