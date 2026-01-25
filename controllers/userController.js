@@ -4,32 +4,85 @@ import logger from "../utils/logger.js";
 import { validateRegisterUserSchema, validateLoginUser } from "../validators/userValidator.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
-import { v4 as uuidv4 } from "uuid"
 import { generateOtp } from "../utils/generatorOtp.js";
+import { saveOTP, verifyOTP } from "../config/Otp.js";
+import { sendOTPEmail } from "../config/email.js";
+import redisClient from "../config/redis.js";
 
-export async function startRegister(req, res) {
+export async function sendSignupOtp(req, res) {
     logger.info("Beginning of registration started.")
-    const { email } = req.body
+    try {
+        const { email } = req.body
 
-    if (!email) {
-        return res.status(400).json({
-            success: false,
-            message: "Email is required"
-        })
-    } else {
-        const existingUser = await User.findOne({ email })
-        if (existingUser) {
-            return res.status(409).json({
-                message: "Email already registered.",
-                success: false
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
             })
         } else {
-            // generate otp
-            const otp = generateOtp()
-            const hashed = await bcrypt.hash(otp, 10)
+            const existingUser = await User.findOne({ email })
+            if (existingUser) {
+                return res.status(409).json({
+                    message: "Email already registered.",
+                    success: false
+                })
+            } else {
+                // generate otp
+                const otp = generateOtp()
 
-            await OTP
+                await saveOTP(email, otp)
+
+                await sendOTPEmail(email, otp)
+                res.status(201).json({
+                    message: "OTP sent to your gmail",
+                    success: true
+                })
+            }
         }
+    } catch (err) {
+        logger.error("Server error", err)
+        res.status(500).json({
+            success: false,
+            message: "Internal server error."
+        })
+    }
+}
+
+export async function verifyOTPCon(req, res) {
+    logger.info("verify otp endpoint hitted")
+    try {
+        const { email, otp } = req.body
+
+        if (!email || !otp) {
+            res.status(400).json({
+                success: false,
+                message: "Email and OTP required"
+            })
+        } else {
+            const result = await verifyOTP(email, otp)
+
+            if (!result.success) {
+                return res.status(400).json(result)
+            } else {
+
+                // mark email as verified
+                await redisClient.set(`otp_verified:${email}`,
+                    "true",
+                    { EX: 600 }
+                )
+                return res.status(200).json({
+                    success: true,
+                    message: "OTP verified successfully."
+                })
+            }
+        }
+    }
+    catch (err) {
+        logger.error("Server error", err)
+        res.status(500).json({
+            message: "Server error",
+            success: false
+        })
     }
 }
 

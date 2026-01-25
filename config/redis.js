@@ -6,13 +6,15 @@ const redisClient = createClient({
     url: process.env.REDIS_URL
 })
 
-
 redisClient.on("connect", () => {
-    logger.log("Redis connected.")
+    logger.info({ message: "Redis connected." })
 })
 
 redisClient.on("error", (err) => {
-    logger.error(`Redis error`, err)
+    logger.error({
+        message: "Redis error",
+        error: err.message
+    })
 })
 
 export const connectRedis = async () => {
