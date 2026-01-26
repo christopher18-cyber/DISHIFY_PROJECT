@@ -1,4 +1,5 @@
 import "dotenv/config"
+import crypto from "crypto"
 import User from "../models/User.js";
 import logger from "../utils/logger.js";
 import { validateRegisterUserSchema, validateLoginUser } from "../validators/userValidator.js";
@@ -6,7 +7,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { generateOtp } from "../utils/generatorOtp.js";
 import { saveOTP, verifyOTP } from "../config/Otp.js";
-import { sendOTPEmail } from "../config/email.js";
+import { sendOTPEmail, sendOtpForFogottenPassword } from "../config/email.js";
 import redisClient from "../config/redis.js";
 
 export async function sendSignupOtp(req, res) {
@@ -102,6 +103,7 @@ export async function registerUserCon(req, res) {
 
             let user = await User.findOne({ $or: [{ email }, { phoneNo }, { username }] })
 
+
             if (user) {
                 logger.warn("User already exist")
                 res.status(400).json({
@@ -109,30 +111,42 @@ export async function registerUserCon(req, res) {
                     message: "User already exist."
                 })
             } else {
-                const salt = await bcrypt.genSalt(10)
-                const hashed = await bcrypt.hash(password, salt)
-                user = new User({
-                    firstName,
-                    lastName,
-                    username,
-                    email,
-                    password: hashed,
-                    role: role || "customer",
-                    phoneNo
-                })
 
-                await user.save()
-
-                if (user) {
-                    res.status(201).json({
-                        message: `User created successfully`,
-                        success: true
+                const isEmailValid = await redisClient.get(`otp:${email}`)
+                if (!isEmailValid) {
+                    res.status(400).json({
+                        success: false,
+                        message: "Pls verify email before signing up"
                     })
                 } else {
-                    res.status(400).json({
-                        message: "Unable to register users, please try again",
-                        success: false
+
+                    await redisClient.del(`otp:${email}`)
+
+                    const salt = await bcrypt.genSalt(10)
+                    const hashed = await bcrypt.hash(password, salt)
+                    user = new User({
+                        firstName,
+                        lastName,
+                        username,
+                        email,
+                        password: hashed,
+                        role: role || "customer",
+                        phoneNo
                     })
+
+                    await user.save()
+
+                    if (user) {
+                        res.status(201).json({
+                            message: `User created successfully`,
+                            success: true
+                        })
+                    } else {
+                        res.status(400).json({
+                            message: "Unable to register users, please try again",
+                            success: false
+                        })
+                    }
                 }
             }
         }
@@ -212,6 +226,7 @@ export async function changePasswordCon(req, res) {
 
         // find the logged user
 
+
         const user = await User.findById(userId)
 
         if (!user) {
@@ -253,7 +268,30 @@ export async function changePasswordCon(req, res) {
 
 export async function sendOtpForFogottenPasswordCon(req, res) {
     logger.info("Send otp for user forgotten password endpoint is hitted")
-    try { }
+    try {
+
+        const { email } = req.body
+        const user = await User.findOne({ email })
+
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "User not found"
+            })
+        } else {
+            const email = user.email
+
+            const otp = generateOtp()
+
+            await saveOTP(email, otp)
+
+            await sendOtpForFogottenPassword(email, otp)
+            res.status(200).json({
+                success: true,
+                message: "OTP sent to the email."
+            })
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -263,9 +301,38 @@ export async function sendOtpForFogottenPasswordCon(req, res) {
     }
 }
 
-export async function sendOtpForRegisterCon(req, res) {
+export async function verifyOTPForForgottenPasswordCon(req, res) {
     logger.info("Send otp for after registering endpoint is hitted.")
-    try { }
+    try {
+        const email = req.email
+        const { otp } = req.body
+
+        if (!otp) {
+            return res.status(400).json({
+                message: "OTP is required.",
+                success: false
+            })
+        } else {
+            const result = await verifyOTP(email, otp)
+
+            if (!result.success) {
+                res.status(400).json({
+                    message: "OTP is not valid",
+                    success: false
+                })
+            } else {
+
+                const resetToken = crypto.randomBytes(32).toString("hex")
+
+                await redisClient.set(`reset:${resetToken}`, email, { EX: 600 })
+                return res.status(200).json({
+                    message: "OTP verified",
+                    success: true,
+                    resetToken
+                })
+            }
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
