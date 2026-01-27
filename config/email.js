@@ -29,3 +29,18 @@ export const sendOtpForFogottenPassword = async (email, otp) => {
 
     })
 }
+
+
+export const sendResetLinkForForgottenPassword = async (email, resetToken) => {
+    await transporter.sendMail({
+        from: `DISHIFY: <process.env.EMAIL_USER>`,
+        to: email,
+        subject: "Reset Your Password",
+        html: `
+            <p>You requested to reset your password.</p>
+            <p>Click the link below to reset it: </p>
+            <a href=${resetToken}">${resetToken}</a>
+            <p>This link expires in 10 minutes</p>
+        `
+    })
+}

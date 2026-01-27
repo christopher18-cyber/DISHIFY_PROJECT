@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUserCon, loginUserCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
+import { registerUserCon, loginUserCon, userDashBoardCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
 import { authMiddleware, attachEmailMiddleware } from "../middleware/auth-middleware.js";
 
 export const userRouter = express.Router()
@@ -17,3 +17,7 @@ userRouter.post("/change-password", authMiddleware, changePasswordCon)
 userRouter.post("/verify-signup-otp", verifyOTPCon)
 
 userRouter.post("/verify-otp-forgotten-password", attachEmailMiddleware, verifyOTPForForgottenPasswordCon)
+
+userRouter.post("/reset-password", forgottenPasswordCon)
+
+userRouter.post("/user-dashboard", authMiddleware, userDashBoardCon)

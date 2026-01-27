@@ -7,7 +7,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { generateOtp } from "../utils/generatorOtp.js";
 import { saveOTP, verifyOTP } from "../config/Otp.js";
-import { sendOTPEmail, sendOtpForFogottenPassword } from "../config/email.js";
+import { sendOTPEmail, sendOtpForFogottenPassword, sendResetLinkForForgottenPassword } from "../config/email.js";
 import redisClient from "../config/redis.js";
 
 export async function sendSignupOtp(req, res) {
@@ -325,10 +325,13 @@ export async function verifyOTPForForgottenPasswordCon(req, res) {
                 const resetToken = crypto.randomBytes(32).toString("hex")
 
                 await redisClient.set(`reset:${resetToken}`, email, { EX: 600 })
+
+                const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
+
+                await sendResetLinkForForgottenPassword(email, resetLink)
                 return res.status(200).json({
                     message: "OTP verified",
                     success: true,
-                    resetToken
                 })
             }
         }
@@ -342,9 +345,82 @@ export async function verifyOTPForForgottenPasswordCon(req, res) {
     }
 }
 
+export async function forgottenPasswordCon(req, res) {
+    logger.info("User forgotten password endpoint is hitted")
+    try {
+        const { token } = req.query
+        const { newpassword } = req.body
+
+        if (!token || !newpassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Reset token and new password are required."
+            })
+        } else {
+            const email = await redisClient.get(`reset:${token}`)
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Reset token is invalid or expired"
+                })
+            } else {
+                const user = await User.findOne({ email })
+
+                if (!user) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "User not found."
+                    })
+                } else {
+                    const hashedPassword = await bcrypt.hash(newpassword, 10)
+
+                    user.password = hashedPassword
+
+                    await user.save()
+
+                    await redisClient.del(`reset:${token}`)
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Password has been reset successfully."
+                    })
+                }
+            }
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: `Server internal error.`
+        })
+    }
+}
+
 export async function userDashBoardCon(req, res) {
     logger.info("User dashboard endpoint hitted.")
-    try { }
+    try {
+        const userId = req.userInfo.userId
+
+        const user = await User.findById(userId).select("-password")
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "Not authorized or invalid user"
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "User found",
+                data: {
+                    username: user.username,
+                    email: user.email,
+                    createdAt: user.createdAt
+                }
+            })
+        }
+    }
     catch (err) {
         logger.error("server internal error", err)
         res.status(500).json({
@@ -392,14 +468,3 @@ export async function changeProfilepictureCon(req, res) {
 }
 
 
-export async function forgottenPasswordCon(req, res) {
-    logger.info("User forgotten password endpoint is hitted")
-    try { }
-    catch (err) {
-        logger.error("Server internal error", err)
-        res.status(500).json({
-            success: false,
-            message: `Server internal error.`
-        })
-    }
-}
