@@ -16,7 +16,7 @@ userRouter.post("/change-password", authMiddleware, changePasswordCon)
 
 userRouter.post("/verify-signup-otp", verifyOTPCon)
 
-userRouter.post("/verify-otp-forgotten-password", attachEmailMiddleware, verifyOTPForForgottenPasswordCon)
+userRouter.post("/verify-otp-forgotten-password", verifyOTPForForgottenPasswordCon)
 
 userRouter.post("/reset-password", forgottenPasswordCon)
 

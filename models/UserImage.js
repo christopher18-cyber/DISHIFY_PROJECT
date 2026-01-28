@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const ImageSchema = new mongoose.Schema({
+const UserImageSchema = new mongoose.Schema({
     url: {
         type: String,
         required: true
@@ -16,6 +16,6 @@ const ImageSchema = new mongoose.Schema({
     }
 }, { timestamps: true })
 
-const Image = mongoose.model("Image", ImageSchema)
+const UserImage = mongoose.model("UserImage", UserImageSchema)
 
-export default Image
+export default UserImage

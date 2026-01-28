@@ -35,12 +35,6 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
         minlength: 6
-    },
-    phoneNo: {
-        type: String,
-        unique: true,
-        trim: true,
-        minlength: 10
     }
 }, { timestamps: true })
 

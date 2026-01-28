@@ -1,7 +1,10 @@
 import "dotenv/config"
 import crypto from "crypto"
 import User from "../models/User.js";
+import UserImage from "../models/UserImage.js";
 import logger from "../utils/logger.js";
+import { uploadToCloudinary } from "../helpers/cloudinaryHelper.js";
+import fs from "fs"
 import { validateRegisterUserSchema, validateLoginUser } from "../validators/userValidator.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
@@ -112,7 +115,7 @@ export async function registerUserCon(req, res) {
                 })
             } else {
 
-                const isEmailValid = await redisClient.get(`otp:${email}`)
+                const isEmailValid = await redisClient.get(`otp_verified:${email}`)
                 if (!isEmailValid) {
                     res.status(400).json({
                         success: false,
@@ -130,8 +133,7 @@ export async function registerUserCon(req, res) {
                         username,
                         email,
                         password: hashed,
-                        role: role || "customer",
-                        phoneNo
+                        role: role || "customer"
                     })
 
                     await user.save()
@@ -304,7 +306,6 @@ export async function sendOtpForFogottenPasswordCon(req, res) {
 export async function verifyOTPForForgottenPasswordCon(req, res) {
     logger.info("Send otp for after registering endpoint is hitted.")
     try {
-        const email = req.email
         const { otp } = req.body
 
         if (!otp) {
@@ -410,14 +411,21 @@ export async function userDashBoardCon(req, res) {
                 message: "Not authorized or invalid user"
             })
         } else {
+
+            // fetch one profile image
+
+            const profileIimage = await UserImage.findOne({ uploadedBy: userId })
+                .select("url publicId createdAt")
+
             res.status(200).json({
                 success: true,
-                message: "User found",
+                message: "User dashboard data",
                 data: {
                     username: user.username,
                     email: user.email,
                     createdAt: user.createdAt
-                }
+                },
+                profileIimage
             })
         }
     }
@@ -445,7 +453,38 @@ export async function orderPageCon(req, res) {
 
 export async function userUploadProfileCon(req, res) {
     logger.info("User upload image endpoint hitted")
-    try { }
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "File is required, please upload an image."
+            })
+        } else {
+            const { url, publicId } = await uploadToCloudinary(req.file.path)
+
+            // store in database
+
+            const newlyUploadedImage = new Image({
+                url,
+                publicId,
+                uploadedBy: req.userInfo.userId
+            })
+
+            await newlyUploadedImage.save()
+
+            try {
+                fs.unlinkSync(req.file.path)
+            } catch (err) {
+                logger.error("Failed to delete local file.", err)
+            }
+
+            res.status(201).json({
+                success: true,
+                message: "Image successfully uploaded.",
+                image: newlyUploadedImage
+            })
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -457,7 +496,17 @@ export async function userUploadProfileCon(req, res) {
 
 export async function changeProfilepictureCon(req, res) {
     logger.info("User change profile picture endpoint hitted")
-    try { }
+    try {
+        const userId = req.userInfo.userId
+
+        if (!req.file) {
+            res.status(400).json({
+                success: false,
+                message: "File is required"
+            })
+        } else {
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -466,5 +515,3 @@ export async function changeProfilepictureCon(req, res) {
         })
     }
 }
-
-
