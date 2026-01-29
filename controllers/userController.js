@@ -12,6 +12,7 @@ import { generateOtp } from "../utils/generatorOtp.js";
 import { saveOTP, verifyOTP } from "../config/Otp.js";
 import { sendOTPEmail, sendOtpForFogottenPassword, sendResetLinkForForgottenPassword } from "../config/email.js";
 import redisClient from "../config/redis.js";
+import cloudinary from "../config/cloudinary.js";
 
 export async function sendSignupOtp(req, res) {
     logger.info("Beginning of registration started.")
@@ -288,6 +289,8 @@ export async function sendOtpForFogottenPasswordCon(req, res) {
             await saveOTP(email, otp)
 
             await sendOtpForFogottenPassword(email, otp)
+
+            await redisClient.set(`forgot-otp:${otp}`, email, { EX: 300 })
             res.status(200).json({
                 success: true,
                 message: "OTP sent to the email."
@@ -314,26 +317,38 @@ export async function verifyOTPForForgottenPasswordCon(req, res) {
                 success: false
             })
         } else {
-            const result = await verifyOTP(email, otp)
 
-            if (!result.success) {
-                res.status(400).json({
-                    message: "OTP is not valid",
-                    success: false
+            const email = await redisClient.get(`forgot-otp:${otp}`)
+
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    message: "OTP is invalid or expired."
                 })
             } else {
 
-                const resetToken = crypto.randomBytes(32).toString("hex")
 
-                await redisClient.set(`reset:${resetToken}`, email, { EX: 600 })
+                const result = await verifyOTP(email, otp)
 
-                const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
+                if (!result.success) {
+                    res.status(400).json({
+                        message: "OTP is not valid",
+                        success: false
+                    })
+                } else {
 
-                await sendResetLinkForForgottenPassword(email, resetLink)
-                return res.status(200).json({
-                    message: "OTP verified",
-                    success: true,
-                })
+                    const resetToken = crypto.randomBytes(32).toString("hex")
+
+                    await redisClient.set(`reset:${resetToken}`, email, { EX: 600 })
+
+                    const resetLink = `${process.env.FRONTEND_URL}/api/user/reset-password?resetToken=${resetToken}`
+
+                    await sendResetLinkForForgottenPassword(email, resetLink)
+                    return res.status(200).json({
+                        message: "OTP verified",
+                        success: true,
+                    })
+                }
             }
         }
     }
@@ -349,16 +364,16 @@ export async function verifyOTPForForgottenPasswordCon(req, res) {
 export async function forgottenPasswordCon(req, res) {
     logger.info("User forgotten password endpoint is hitted")
     try {
-        const { token } = req.query
+        const { resetToken } = req.query
         const { newpassword } = req.body
 
-        if (!token || !newpassword) {
+        if (!resetToken || !newpassword) {
             return res.status(400).json({
                 success: false,
                 message: "Reset token and new password are required."
             })
         } else {
-            const email = await redisClient.get(`reset:${token}`)
+            const email = await redisClient.get(`reset:${resetToken}`)
             if (!email) {
                 return res.status(400).json({
                     success: false,
@@ -379,7 +394,7 @@ export async function forgottenPasswordCon(req, res) {
 
                     await user.save()
 
-                    await redisClient.del(`reset:${token}`)
+                    await redisClient.del(`reset:${resetToken}`)
 
                     return res.status(200).json({
                         success: true,
@@ -502,9 +517,41 @@ export async function changeProfilepictureCon(req, res) {
         if (!req.file) {
             res.status(400).json({
                 success: false,
-                message: "File is required"
+                message: "Profile Image is required"
             })
         } else {
+            const existingimage = await Image.findOne({ uploadedBy: userId })
+
+            if (existingimage) {
+                await cloudinary.uploader.destroy(existingimage.publicId)
+
+                await Image.deleteOne({ _id: existingimage._id })
+            } else {
+                const { url, publicId } = await uploadToCloudinary(req.file.path)
+
+                const newProfileImage = new Image({
+                    url,
+                    publicId,
+                    uploadedBy: userId
+                })
+
+                await newProfileImage.save()
+
+                try {
+                    fs.unlinkSync(req.file.path)
+                } catch (err) {
+                    logger.warn("Failed to delete local file", err)
+                }
+
+                res.status(200).json({
+                    success: true,
+                    message: "Profile picture changed successfully.",
+                    profileIimage: {
+                        url: newProfileImage.url,
+                        publicId: newProfileImage.publicId
+                    }
+                })
+            }
         }
     }
     catch (err) {

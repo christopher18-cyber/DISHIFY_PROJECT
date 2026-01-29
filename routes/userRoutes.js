@@ -18,6 +18,6 @@ userRouter.post("/verify-signup-otp", verifyOTPCon)
 
 userRouter.post("/verify-otp-forgotten-password", verifyOTPForForgottenPasswordCon)
 
-userRouter.post("/reset-password", forgottenPasswordCon)
+userRouter.get("/reset-password", forgottenPasswordCon)
 
-userRouter.post("/user-dashboard", authMiddleware, userDashBoardCon)
+userRouter.get("/user-dashboard", authMiddleware, userDashBoardCon)
