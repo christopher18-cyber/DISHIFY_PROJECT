@@ -31,7 +31,10 @@ export function validateRegisterUserSchema(data) {
 
         phoneNo: joi.string()
             .min(10)
-            .max(14)
+            .max(14),
+
+        role: joi.string()
+
 
     })
     return schema.validate(data)

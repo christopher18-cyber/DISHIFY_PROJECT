@@ -479,7 +479,7 @@ export async function userUploadProfileCon(req, res) {
 
             // store in database
 
-            const newlyUploadedImage = new Image({
+            const newlyUploadedImage = new UserImage({
                 url,
                 publicId,
                 uploadedBy: req.userInfo.userId
@@ -520,16 +520,16 @@ export async function changeProfilepictureCon(req, res) {
                 message: "Profile Image is required"
             })
         } else {
-            const existingimage = await Image.findOne({ uploadedBy: userId })
+            const existingimage = await UserImage.findOne({ uploadedBy: userId })
 
             if (existingimage) {
                 await cloudinary.uploader.destroy(existingimage.publicId)
 
-                await Image.deleteOne({ _id: existingimage._id })
+                await UserImage.deleteOne({ _id: existingimage._id })
             } else {
                 const { url, publicId } = await uploadToCloudinary(req.file.path)
 
-                const newProfileImage = new Image({
+                const newProfileImage = new UserImage({
                     url,
                     publicId,
                     uploadedBy: userId

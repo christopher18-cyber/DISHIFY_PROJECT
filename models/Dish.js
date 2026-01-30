@@ -40,6 +40,6 @@ const dishSchema = new mongoose.Schema({
 },
     { timestamps: true })
 
-const dish = mongoose.model("Dish", dishSchema)
+const Dish = mongoose.model("Dish", dishSchema)
 
-export default dish
+export default Dish

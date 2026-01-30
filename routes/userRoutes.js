@@ -1,6 +1,7 @@
 import express from "express";
-import { registerUserCon, loginUserCon, userDashBoardCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
+import { registerUserCon, loginUserCon, userDashBoardCon, changeProfilepictureCon, userUploadProfileCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
 import { authMiddleware, attachEmailMiddleware } from "../middleware/auth-middleware.js";
+import { uploadMiddleware } from "../middleware/upload-middleware.js";
 
 export const userRouter = express.Router()
 
@@ -21,3 +22,7 @@ userRouter.post("/verify-otp-forgotten-password", verifyOTPForForgottenPasswordC
 userRouter.get("/reset-password", forgottenPasswordCon)
 
 userRouter.get("/user-dashboard", authMiddleware, userDashBoardCon)
+
+userRouter.post("/upload-profile-picture", authMiddleware, uploadMiddleware.single("image"), userUploadProfileCon)
+
+userRouter.put("/change-profile-picture", authMiddleware, uploadMiddleware.single("image"), changeProfilepictureCon)
