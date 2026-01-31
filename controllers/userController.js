@@ -197,11 +197,12 @@ export async function loginUserCon(req, res) {
                         userId: user.id,
                         username: user.username,
                         role: user.role
-                    }, process.env.JWT_SECRET_KEY, { expiresIn: "20m" })
+                    }, process.env.JWT_SECRET_KEY, { expiresIn: "30m" })
                     res.status(200).json({
                         message: `Logged in successfully`,
                         success: true,
-                        accessToken
+                        accessToken,
+                        role: user.role
                     })
                 }
             }
@@ -428,8 +429,7 @@ export async function userDashBoardCon(req, res) {
         } else {
 
             // fetch one profile image
-
-            const profileIimage = await UserImage.findOne({ uploadedBy: userId })
+            const profileImage = await UserImage.findOne({ uploadedBy: userId })
                 .select("url publicId createdAt")
 
             res.status(200).json({
@@ -440,7 +440,7 @@ export async function userDashBoardCon(req, res) {
                     email: user.email,
                     createdAt: user.createdAt
                 },
-                profileIimage
+                profileImage
             })
         }
     }

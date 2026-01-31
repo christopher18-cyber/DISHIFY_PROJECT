@@ -2,6 +2,7 @@ import "dotenv/config"
 import express from "express"
 import { connectToDB } from "./database/db.js"
 import { userRouter } from "./routes/userRoutes.js"
+import { adminRoutes } from "./routes/adminRoutes.js"
 import helmet from "helmet"
 // import Redis from "ioredis"
 // import rateLimit from "express-rate-limit"
@@ -40,6 +41,8 @@ await connectRedis()
 app.use(errorHandler)
 
 app.use("/api/user", userRouter)
+
+app.use("/api/admin", adminRoutes)
 
 app.listen(PORT, () => {
     logger.info(`Server now running on port ${PORT}`)
