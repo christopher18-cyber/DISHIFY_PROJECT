@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        minlength: 8,
+        minlength: 6,
         trim: true
 
     },
@@ -34,11 +34,14 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
         trim: true,
-        minlength: 6
+        minlength: 4
     },
     isActive: {
         default: true,
         type: Boolean
+    },
+    phoneNo: {
+        type: String
     }
 }, { timestamps: true })
 

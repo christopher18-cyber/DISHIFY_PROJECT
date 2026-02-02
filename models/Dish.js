@@ -28,7 +28,7 @@ const dishSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ["draft", "pending", "approved", "rejected", "archived"],
-        default: "draft"
+        default: "pending"
     },
 
     approvedBy: {
