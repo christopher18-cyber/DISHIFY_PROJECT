@@ -114,20 +114,21 @@ export async function deleteStaff(req, res) {
 
             const staff = await User.findOne({ email })
 
-            if (staff.role !== "staff") {
-                res.status(400).json({
+            if (!staff) {
+                res.status(404).json({
                     success: false,
-                    message: "This user can't be deleted"
+                    message: "Staff not found."
                 })
             } else {
-                const deletedStaff = await User.findOneAndDelete({ email }).select("-password")
 
-                if (!deletedStaff && deletedStaff.role == null) {
-                    return res.status(404).json({
+                if (staff.role !== "staff") {
+                    return res.status(403).json({
                         success: false,
-                        message: "Staff not found."
+                        message: "User is not a staff."
                     })
                 } else {
+
+                    const deletedStaff = await staff.deleteOne()
 
                     res.status(200).json({
                         success: true,
@@ -138,6 +139,7 @@ export async function deleteStaff(req, res) {
             }
         }
     }
+
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -189,7 +191,7 @@ export async function getAllUsers(req, res) {
         } else {
             res.status(200).json({
                 success: true,
-                message: "",
+                message: "All users retrived.",
                 allUsers
             })
         }
@@ -210,7 +212,7 @@ export async function getAllProducts(req, res) {
         const getAllDish = await Dish.find()
 
         if (!getAllDish) {
-            res.status(400).json({
+            res.status(404).json({
                 message: "No dish is found",
                 success: false
             })
