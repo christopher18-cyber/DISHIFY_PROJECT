@@ -8,10 +8,55 @@ import cloudinary from "../config/cloudinary.js"
 import fs from "fs"
 import { generateOtp } from "../utils/generatorOtp.js"
 import Dish from "../models/Dish.js"
+import { deleteStaffInviteToken, getStaffIdFromToken } from "../config/token.js"
 
 
 export async function staffProperSignUp(req, res) {
-    try { }
+    logger.info("Sign for staff endpoint hitted.")
+    try {
+        const { inviteToken } = req.query
+        const { password } = req.body
+
+        if (!inviteToken) {
+            res.status(400).json({
+                success: false,
+                message: "Invite link not found or expired."
+            })
+        } else {
+            if (!password) {
+                res.status(400).json({
+                    success: false,
+                    message: "Password field is required."
+                })
+            } else {
+                const invite = await getStaffIdFromToken(inviteToken)
+
+                if (!invite.success) {
+                    return res.status(400).json(invite)
+                } else {
+                    const staff = await User.findById(invite.staffId)
+                    if (!staff || staff.isActive) {
+                        res.status(400).json({
+                            success: false,
+                            message: "Staff already exist activated or invalid"
+                        })
+                    } else {
+                        staff.password = password
+                        staff.isActive = true
+
+                        await staff.save()
+
+                        await deleteStaffInviteToken(inviteToken)
+
+                        res.status(200).json({
+                            success: true,
+                            message: "Staff accont successfully activated."
+                        })
+                    }
+                }
+            }
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({

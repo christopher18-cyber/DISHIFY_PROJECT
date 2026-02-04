@@ -44,3 +44,20 @@ export const sendResetLinkForForgottenPassword = async (email, resetToken) => {
         `
     })
 }
+
+
+export const sendInviteLinkForStaffSignup = async (email, inviteLink) => {
+    await transporter.sendMail({
+        from: `DISHIFY: <process.env/EMAIL_USER>`,
+        to: email,
+        subject: "You are invited to join Dishify",
+        html: `
+        <h3>Welcome to Dishify</h3>
+        <p>You have been invited as a staff member</p>
+        <p>
+            <a href="${inviteLink}">${inviteLink}.</a>
+        </p>
+        <p>This link expires in 12 hours.</p>
+        `
+    })
+}

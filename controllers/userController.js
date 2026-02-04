@@ -230,7 +230,6 @@ export async function changePasswordCon(req, res) {
 
         // find the logged user
 
-
         const user = await User.findById(userId)
 
         if (!user) {
@@ -345,6 +344,7 @@ export async function verifyOTPForForgottenPasswordCon(req, res) {
                     const resetLink = `${process.env.FRONTEND_URL}/api/user/reset-password?resetToken=${resetToken}`
 
                     await sendResetLinkForForgottenPassword(email, resetLink)
+
                     return res.status(200).json({
                         message: "OTP verified",
                         success: true,

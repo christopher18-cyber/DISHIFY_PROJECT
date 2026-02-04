@@ -10,6 +10,7 @@ import { configCors } from "./middleware/cors.js"
 import logger from "./utils/logger.js"
 import errorHandler from "./middleware/errorHandler.js"
 import { connectRedis } from "./config/redis.js"
+import { staffRoutes } from "./routes/staffRoutes.js"
 const app = express()
 
 
@@ -43,6 +44,8 @@ app.use(errorHandler)
 app.use("/api/user", userRouter)
 
 app.use("/api/admin", adminRoutes)
+
+app.use("/api/staff", staffRoutes)
 
 app.listen(PORT, () => {
     logger.info(`Server now running on port ${PORT}`)

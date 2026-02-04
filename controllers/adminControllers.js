@@ -7,6 +7,10 @@ import * as crypto from "crypto"
 import redisClient from "../config/redis.js"
 import { validateLoginUser, validateRegisterUserSchema } from "../validators/userValidator.js"
 import { registerStaffSchema } from "../validators/staffValidator.js"
+import { sendOTPEmail } from "../config/email.js"
+import { sendInviteLinkStaffSignup } from "../config/Otp.js"
+import { sendInviteLinkForStaffSignup } from "../config/email.js"
+import { storeStaffInviteToken } from "../config/token.js"
 
 export async function adminDashboard(req, res) {
     logger.info("Admin dashboard endpoint hitted.")
@@ -62,31 +66,35 @@ export async function createStaff(req, res) {
             if (existingUser) {
                 return res.status(400).json({
                     success: false,
-                    message: "User already created"
+                    message: "Staff already exists"
                 })
             } else {
-
-                const tempPassword = crypto.randomBytes(6).toString("hex")
 
                 const staff = await User.create({
                     firstName,
                     lastName,
                     email,
                     username,
-                    password: tempPassword,
-                    role: "staff"
+                    password: null,
+                    role: "staff",
+                    isActive: false
                 })
+
+
+                const { token } = await storeStaffInviteToken(staff._id)
+
+                const inviteLink = `${process.env.FRONTEND_URL}/api/staff/signup?inviteToken=${token}`
+
+                await sendInviteLinkForStaffSignup(staff.email, inviteLink)
+
 
                 res.status(201).json({
                     success: true,
                     email: staff.email,
-                    message: "Staff created successfully",
-                    password: staff.password
+                    message: "Staff created and Invite link sent to staff successfully."
                 })
 
-
             }
-
 
         }
     }

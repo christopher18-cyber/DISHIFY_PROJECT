@@ -1,5 +1,7 @@
 import redisClient from "../config/redis.js";
 import bcrypt from "bcrypt"
+import * as crypto from "crypto"
+
 
 export const saveOTP = async (email, otp) => {
     const key = `otp:${email}`
@@ -39,4 +41,12 @@ export const verifyOTP = async (email, otp) => {
             }
         }
     }
+}
+
+
+export const sendInviteLinkStaffSignup = async (staff) => {
+    const inviteToken = crypto.randomBytes(32).toString("hex")
+    const redisKey = `staff:invite:${inviteToken}`
+
+    await redisClient.set(redisKey, staff._id.toString(), { EX: "" })
 }

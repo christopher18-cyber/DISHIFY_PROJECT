@@ -6,8 +6,10 @@ import { uploadMiddleware } from "../middleware/upload-middleware.js";
 
 export const staffRoutes = express.Router()
 
-staffRoutes.post("staff-dashboard", authMiddleware, isStaffUser, staffDashboard)
+staffRoutes.post("/dashboard", authMiddleware, isStaffUser, staffDashboard)
 
-staffRoutes.post("staff-post-dishes", authMiddleware, isStaffUser, uploadMiddleware.single("image"), postDishes)
+staffRoutes.post("/post-dishes", authMiddleware, isStaffUser, uploadMiddleware.single("image"), postDishes)
 
-staffRoutes.post("", authMiddleware, isStaffUser, staffProperSignUp)
+staffRoutes.post("/signup", staffProperSignUp)
+
+// staffRoutes.put("/send-otp", sendOtpForStaff)
