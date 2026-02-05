@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUserCon, loginUserCon, userDashBoardCon, changeProfilepictureCon, userUploadProfileCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
+import { registerUserCon, loginUserCon, userDashBoardCon, userSubmitReview, changeProfilepictureCon, userDeleteAccount, userUploadProfileCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
 import { authMiddleware, attachEmailMiddleware } from "../middleware/auth-middleware.js";
 import { uploadMiddleware } from "../middleware/upload-middleware.js";
 
@@ -26,3 +26,7 @@ userRouter.get("/user-dashboard", authMiddleware, userDashBoardCon)
 userRouter.post("/upload-profile-picture", authMiddleware, uploadMiddleware.single("image"), userUploadProfileCon)
 
 userRouter.put("/change-profile-picture", authMiddleware, uploadMiddleware.single("image"), changeProfilepictureCon)
+
+userRouter.delete("/delete-account", authMiddleware, userDeleteAccount)
+
+userRouter.post("/submit-review", authMiddleware, userSubmitReview)

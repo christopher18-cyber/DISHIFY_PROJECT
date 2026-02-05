@@ -3,6 +3,7 @@ import logger from "../utils/logger.js"
 import UserImage from "../models/UserImage.js"
 import User from "../models/User.js"
 import Dish from "../models/Dish.js"
+import Review from "../models/Review.js"
 import * as crypto from "crypto"
 import redisClient from "../config/redis.js"
 import { validateLoginUser, validateRegisterUserSchema } from "../validators/userValidator.js"
@@ -244,7 +245,22 @@ export async function getAllProducts(req, res) {
 
 export async function getAllReviewsFromAllUsers(req, res) {
     logger.info("Admin, get all review from the users endpoint hitted")
-    try { }
+    try {
+        const allReviews = await Review.find()
+
+        if (!allReviews) {
+            res.status(200).json({
+                success: true,
+                message: "No post is found."
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "All review gotten.",
+                allReviews
+            })
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({

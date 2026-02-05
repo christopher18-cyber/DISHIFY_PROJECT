@@ -1,17 +1,18 @@
 import mongoose from "mongoose";
 
-const ReviewSchema = new mongoose.model({
+const ReviewSchema = new mongoose.Schema({
     sentBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
 
-    messages: {
+    message: {
         type: String,
         trim: true,
         required: true
-    }
+    },
+
 }, { timestamps: true })
 
 const Review = mongoose.model("Review", ReviewSchema)

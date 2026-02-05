@@ -13,6 +13,7 @@ import { saveOTP, verifyOTP } from "../config/Otp.js";
 import { sendOTPEmail, sendOtpForFogottenPassword, sendResetLinkForForgottenPassword } from "../config/email.js";
 import redisClient from "../config/redis.js";
 import cloudinary from "../config/cloudinary.js";
+import Review from "../models/Review.js";
 
 export async function sendSignupOtp(req, res) {
     logger.info("Beginning of registration started.")
@@ -273,7 +274,7 @@ export async function sendOtpForFogottenPasswordCon(req, res) {
     logger.info("Send otp for user forgotten password endpoint is hitted")
     try {
 
-        const { email } = req.body
+        const { email } = req.body || {}
         const user = await User.findOne({ email })
 
         if (!user) {
@@ -455,7 +456,7 @@ export async function userDashBoardCon(req, res) {
 
 
 export async function orderPageCon(req, res) {
-    logger.info("User Order endpint hitted.")
+    logger.info("User Order endpoint hitted.")
     try { }
     catch (err) {
         logger.error("Server internal error", err)
@@ -559,6 +560,72 @@ export async function changeProfilepictureCon(req, res) {
         res.status(500).json({
             success: false,
             message: `Server internal error.`
+        })
+    }
+}
+
+
+export async function userDeleteAccount(req, res) {
+    try {
+        const userId = req.userInfo.userId
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "User not found"
+            })
+        } else {
+
+            await User.findOneAndDelete(userId)
+
+            res.status(200).json({
+                success: true,
+                message: "Account deleted successfully."
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function userSubmitReview(req, res) {
+    logger.error("User submit review endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+        const { message } = req.body
+
+        if (!message) {
+            res.status(400).json({
+                success: false,
+                message: "Message field required."
+            })
+        } else {
+            const userReview = new Review({
+                message,
+                sentBy: userId
+            })
+
+            await userReview.save()
+
+            res.status(200).json({
+                success: true,
+                message: "Review submitted successfully."
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
         })
     }
 }

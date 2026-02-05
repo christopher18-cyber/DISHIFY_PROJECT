@@ -6,9 +6,13 @@ import bcrypt from "bcrypt"
 import redisClient from "../config/redis.js"
 import cloudinary from "../config/cloudinary.js"
 import fs from "fs"
+import * as crypto from "crypto"
 import { generateOtp } from "../utils/generatorOtp.js"
 import Dish from "../models/Dish.js"
 import { deleteStaffInviteToken, getStaffIdFromToken } from "../config/token.js"
+import { saveOTP, verifyOTP } from "../config/Otp.js"
+import { sendOtpForFogottenPassword, sendResetLinkForForgottenPassword } from "../config/email.js"
+import Review from "../models/Review.js"
 
 
 export async function staffProperSignUp(req, res) {
@@ -117,7 +121,22 @@ export async function postDishes(req, res) {
 
 
 export async function getAllDishes(req, res) {
-    try { }
+    logger.info("Staff, get all dishes endpoint hitted")
+    try {
+        const getAllDishes = await Dish.find()
+        if (!getAllDishes) {
+            res.status(400).json({
+                success: false,
+                message: "No dish is found."
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "All Dishes in the cart.",
+                getAllDishes
+            })
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -130,7 +149,38 @@ export async function getAllDishes(req, res) {
 
 export async function staffUploadProfileCon(req, res) {
     logger.info("staff upload profile picture endpoint hitted")
-    try { }
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "File is required, please upload an image."
+            })
+        } else {
+            const { url, publicId } = await uploadToCloudinary(req.file.path)
+
+            // store in database
+
+            const newlyUploadedImage = new UserImage({
+                url,
+                publicId,
+                uploadedBy: req.userInfo.userId
+            })
+
+            await newlyUploadedImage.save()
+
+            try {
+                fs.unlinkSync(req.file.path)
+            } catch (err) {
+                logger.error("Failed to delete local file.", err)
+            }
+
+            res.status(201).json({
+                success: true,
+                message: "Image successfully uploaded.",
+                image: newlyUploadedImage
+            })
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -143,7 +193,49 @@ export async function staffUploadProfileCon(req, res) {
 
 export async function staffChangePicture(req, res) {
     logger.info("staff change picture endpoint hitted")
-    try { }
+    try {
+        const userId = req.userInfo.userId
+
+        if (!req.file) {
+            res.status(400).json({
+                success: false,
+                message: "Profile Image is required"
+            })
+        } else {
+            const existingimage = await UserImage.findOne({ uploadedBy: userId })
+
+            if (existingimage) {
+                await cloudinary.uploader.destroy(existingimage.publicId)
+
+                await UserImage.deleteOne({ _id: existingimage._id })
+            } else {
+                const { url, publicId } = await uploadToCloudinary(req.file.path)
+
+                const newProfileImage = new UserImage({
+                    url,
+                    publicId,
+                    uploadedBy: userId
+                })
+
+                await newProfileImage.save()
+
+                try {
+                    fs.unlinkSync(req.file.path)
+                } catch (err) {
+                    logger.warn("Failed to delete local file", err)
+                }
+
+                res.status(200).json({
+                    success: true,
+                    message: "Profile picture changed successfully.",
+                    profileIimage: {
+                        url: newProfileImage.url,
+                        publicId: newProfileImage.publicId
+                    }
+                })
+            }
+        }
+    }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -173,7 +265,6 @@ export async function staffDashboard(req, res) {
         const userId = req.userInfo.userId
 
         const staff = await User.findById(userId).select("-password")
-
 
         if (!staff) {
             return res.status(400).json({
@@ -212,13 +303,11 @@ export async function staffDashboard(req, res) {
 export async function staffChangePassword(req, res) {
     logger.info("Change password endpoint is hitted")
     try {
-
         // get the req.userInfo from the middleware
         const userId = req.userInfo.userId
         // extract old and new password
 
         const { oldpassword, newpassword } = req.body
-
         // find the logged user
 
         const user = await User.findById(userId)
@@ -264,28 +353,36 @@ export async function sendOtpForStaff(req, res) {
     logger.info("Send otp for user forgotten password endpoint is hitted")
     try {
 
-        const { email } = req.body
-        const user = await User.findOne({ email })
+        const { email } = req.body || {}
 
-        if (!user) {
+        if (!email) {
             res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "Pls email is required."
             })
         } else {
-            const email = user.email
 
-            const otp = generateOtp()
+            const user = await User.findOne({ email })
 
-            await saveOTP(email, otp)
+            if (!user) {
+                res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                })
+            } else {
 
-            await sendOtpForFogottenPassword(email, otp)
+                const otp = generateOtp()
 
-            await redisClient.set(`forgot-otp:${otp}`, email, { EX: 300 })
-            res.status(200).json({
-                success: true,
-                message: "OTP sent to the email."
-            })
+                await saveOTP(email, otp)
+
+                await sendOtpForFogottenPassword(email, otp)
+
+                await redisClient.set(`forgot-otp:${otp}`, email, { EX: 300 })
+                res.status(200).json({
+                    success: true,
+                    message: "OTP sent to the email."
+                })
+            }
         }
     }
     catch (err) {
@@ -334,7 +431,7 @@ export async function verifyOTPForStaffForgottenPassword(req, res) {
 
                     await redisClient.set(`reset:${resetToken}`, email, { EX: 600 })
 
-                    const resetLink = `${process.env.FRONTEND_URL}/api/user/reset-password?resetToken=${resetToken}`
+                    const resetLink = `${process.env.FRONTEND_URL}/api/staff/reset-password?resetToken=${resetToken}`
 
                     await sendResetLinkForForgottenPassword(email, resetLink)
                     return res.status(200).json({
@@ -403,6 +500,34 @@ export async function forgottenPasswordConForStaff(req, res) {
         res.status(500).json({
             success: false,
             message: `Server internal error.`
+        })
+    }
+}
+
+
+export async function getAllReviewsFromAllUsers(req, res) {
+    logger.info("Staff, get all reviews from users")
+    try {
+        const allReviews = await Review.find()
+
+        if (!allReviews) {
+            res.status(200).json({
+                success: true,
+                message: "No post is found."
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "All review gotten.",
+                allReviews
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
         })
     }
 }
