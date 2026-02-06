@@ -539,7 +539,7 @@ export async function manageOrder(req, res) {
 export async function getAllOrders(req, res) {
     logger.info("Staff get all orders endpoint hitted.")
     try {
-        const orders = await order.find()
+        const orders = await order.find({})
             .populate("customer", "username email firstName")
             .populate("items.dish", "name price image")
             .sort({ createdAt: -1 })
@@ -557,6 +557,84 @@ export async function getAllOrders(req, res) {
         res.status(500).json({
             success: false,
             message: "Server internal error."
+        })
+    }
+}
+
+
+
+export async function logoutUser(req, res) {
+    try {
+        const authHeader = req.headers["authorization"]
+        const token = authHeader & authHeader.split(" ")[1]
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "No token provided, cannot logout"
+            })
+        }
+
+        await redisClient.set(`blacklist:${token}`, true, { EX: 1800 })
+
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully."
+        })
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+export async function updateDishCon(req, res) {
+    logger.info("Staff, update dish endpoint hitted")
+    try {
+        const { dishId } = req.params
+        const { name, price, description } = req.body
+
+        const dish = await Dish.findById(dishId)
+
+        if (!dish) {
+            return res.status(404).json({
+                success: false,
+                message: "Dish not found"
+            })
+        } else {
+            if (name) dish.name = name
+            if (price) dish.price = price
+            if (description) dish.description = description
+
+            if (req.file) {
+                if (dish.image && dish.publicId) {
+                    await cloudinary.uploader.destroy(dish.publicId)
+                }
+
+                const { secure_url, public_id } = await cloudinary.uploader.upload(req.file)
+                dish.image = secure_url
+
+                dish.publicId = public_id
+
+                fs.unlinkSync(req.file.path)
+            }
+
+            await dish.save()
+        }
+        res.status(200).json({
+            success: true,
+            message: "Dish updated successfully"
+        })
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
         })
     }
 }

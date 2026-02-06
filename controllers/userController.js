@@ -15,6 +15,7 @@ import redisClient from "../config/redis.js";
 import cloudinary from "../config/cloudinary.js";
 import Review from "../models/Review.js";
 import order from "../models/Order.js";
+import cartItem from "../models/cartItem.js";
 
 export async function sendSignupOtp(req, res) {
     logger.info("Beginning of registration started.")
@@ -620,55 +621,6 @@ export async function userSubmitReview(req, res) {
 }
 
 
-export async function getAllCarts(req, res) {
-    logger.info("User, get all carts endpoint hitted.")
-    try {
-        const userId = req.userInfo.userId
-
-        const allOrderedDish = await order.find({ customer: userId })
-        if (!allOrderedDish) {
-            res.status(200).json({
-                success: true,
-                message: "No order is found"
-            })
-        } else {
-            res.status(200).json({
-                success: true,
-                message: "All orders returned successfully.",
-                allOrderedDish
-            })
-        }
-    }
-    catch (err) {
-        logger.error("Server internal error", err)
-        res.status(500).json({
-            success: false,
-            message: "Server internal error"
-        })
-    }
-}
-
-
-export async function deleteOneOrder(req, res) {
-    logger.info("User, delete one order endpoint hitted")
-    try {
-        const userId = req.userInfo.userId
-
-        const { _id } = req.params
-
-        // const product = await order
-
-        // if ()
-    }
-    catch (err) {
-        logger.error("Server internal error", err)
-        res.status(500).json({
-            success: false,
-            message: "Server internal error"
-        })
-    }
-}
-
 export async function orderPageCon(req, res) {
     logger.info("User Order endpoint hitted.")
     try {
@@ -688,6 +640,257 @@ export async function orderPageCon(req, res) {
                 allUserOrder
             })
         }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+export async function addToCart(req, res) {
+    logger.info("Customer, add to cart, endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+        const { dishId } = req.params
+
+
+        const cart = await cartItem.findOne({ customer: userId })
+
+        if (!cart) {
+            return res.status(404).json({
+                success: false,
+                message: "Cart not found."
+            })
+        } else {
+            const itemIndex = cart.items.findIndex(
+                (item) => item.dish.toString() === dishId
+            )
+
+            if (itemIndex === -1) {
+                cart.items.push({ dish: dishId, quantity: 1, priceAtTime: dish.price })
+            } else {
+                cart.items[itemIndex].quantity += 1
+            }
+
+            cart.totalAmount = cart.items.reduce((sum, item) => {
+                return sum + (item.quantity * item.priceAtTime)
+            }, 0)
+            await cart.save()
+
+            res.status(200).json({
+                success: true,
+                message: "Quantity increased.",
+                cart
+            })
+
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+
+export async function DecreaseCartFromCart(req, res) {
+    logger.info("Customer, Decrease from cart, endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+        const { dishId } = req.params
+
+
+        const cart = await cartItem.findOne({ customer: userId })
+
+        if (!cart) {
+            return res.status(404).json({
+                success: false,
+                message: "Cart not found."
+            })
+        } else {
+            const itemIndex = cart.items.findIndex(
+                (item) => item.dish.toString() === dishId
+            )
+
+            if (itemIndex == -1) {
+                res.status(404).json({
+                    success: false,
+                    message: "This dish is not found in the cart."
+                })
+            } else {
+
+                if (cart.items[itemIndex].quantity == 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "The dish quantity can't decreased, because it was n't added to cart"
+                    })
+                } else {
+                    cart.items[itemIndex].quantity -= 1
+                    cart.totalAmount = cart.items.reduce((sum, item) => {
+                        return sum + (item.quantity * item.priceAtTime)
+                    }, 0)
+                }
+            }
+
+            await cart.save()
+
+            res.status(200).json({
+                success: true,
+                message: "Quantity decreased.",
+                cart
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+
+export async function getAllCarts(req, res) {
+    logger.info("Customer, get all carts endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+
+        const cart = await cartItem.findOne({ customer: userId }).populate("items.dish", "name price image")
+
+        if (!cart || cart.items.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: "Cart is empty",
+                cart: null
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "Cart fetched successfullly",
+                cart
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+
+export async function clearCart(req, res) {
+    logger.info("Customer, clear cart endpoin hitted")
+    try {
+        const userId = req.userInfo.userId
+
+        const cart = await cartItem.findOne({ customer: userId })
+
+        if (!cart || cart.items.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: "Cart is already empty."
+            })
+        } else {
+            cart.items = []
+            cart.totalAmount = 0
+
+            await cart.save()
+
+            res.status(200).json({
+                success: true,
+                message: "Cart cleared successfully.",
+                cart
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+export async function removeItem(req, res) {
+    logger.info("Customer, remove item from the cart endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+
+        const { dishId } = req.params
+
+        const cart = await cartItem.findOne({ customer: userId })
+
+        if (!cart) {
+            return res.status(400).json({
+                success: false,
+                message: "Cart not found"
+            })
+        } else {
+            const itemIndex = cart.items.findIndex(item => item.dish.toString() === dishId)
+
+            if (itemIndex === -1) {
+                res.status(404).json({
+                    success: false,
+                    message: "This dish is not found in the cart."
+                })
+            } else {
+                cart.items.splice(itemIndex, 1)
+
+                cart.totalAmount = cart.items.reduce((sum, item) => sum + item.quantity * item.priceAtTime, 0)
+
+                await cart.save()
+
+                res.status(200).json({
+                    success: true,
+                    message: "Dish removed from the cart successfully.",
+                    cart
+                })
+            }
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+export async function logoutUser(req, res) {
+    try {
+        const authHeader = req.headers["authorization"]
+        const token = authHeader & authHeader.split(" ")[1]
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "No token provided, cannot logout"
+            })
+        }
+
+        await redisClient.set(`blacklist:${token}`, true, { EX: 1800 })
+
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully."
+        })
     }
     catch (err) {
         logger.error("Server internal error", err)

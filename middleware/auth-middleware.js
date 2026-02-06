@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken"
 import logger from "../utils/logger.js"
+import redisClient from "../config/redis.js"
 
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
     const authHeader = req.headers["authorization"]
-    logger.info(authHeader)
     const token = authHeader && authHeader.split(" ")[1]
 
     if (!token) {
@@ -14,6 +14,14 @@ export const authMiddleware = (req, res, next) => {
     } else {
 
         try {
+
+            const isBlackedListed = await redisClient.get(`blacklist:${token}`)
+            if (isBlackedListed) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Token is invalid, please try to login again."
+                })
+            }
             const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY)
             // logger.info(decodedToken)
             req.userInfo = decodedToken

@@ -24,13 +24,15 @@ const dishSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-
     status: {
         type: String,
-        enum: ["draft", "pending", "approved", "rejected", "archived"],
+        enum: ["pending", "approved", "rejected"],
         default: "pending"
     },
-
+    reason: {
+        type: String,
+        defaut: null
+    },
     approvedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"

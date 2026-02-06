@@ -290,3 +290,145 @@ export async function getAllOrders(req, res) {
         })
     }
 }
+
+
+export async function approveDish(req, res) {
+    logger.info("admin, approve dishes endpoint hitted.")
+    try {
+        const { dishId } = req.params
+
+        const dish = await DishfindById(dishId)
+
+        if (!dish) {
+            res.status(404).json({
+                success: false,
+                message: "Dish not found."
+            })
+        } else {
+
+            if (dish.status === "approved") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Dish is already approved."
+                })
+            } else {
+                dish.status = "approved"
+                await dish.save()
+
+                res.status(200).json({
+                    success: true,
+                    message: "Dish approved successfully.",
+                    dish
+                })
+            }
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function rejectDish(req, res) {
+    logger.info("Admin, reject dishes endpoint hitted")
+    try {
+        const { dishId } = req.params
+        const { reason } = req.body
+
+        const dish = await Dish.findById(dishId)
+
+        if (!dish) {
+            return res.status(404).json({
+                success: false,
+                message: "Dish not found."
+            })
+        } else {
+            if (dish.status === "rejected") {
+                res.status(400).json({
+                    message: "Dish is already rejected",
+                    success: false
+                })
+            } else {
+                dish.status = "rejected"
+                dish.reason = reason || "No reason provided."
+                await dish.save()
+
+                res.status(200).json({
+                    success: true,
+                    message: "Dish rejected successfully.",
+                    dish
+                })
+            }
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function getAllPendingDishes(req, res) {
+    logger.info("Admin, get all pending dishes endpoint hitted.")
+    try {
+        const allPendingDishes = await Dish.find({ status: "pending" })
+
+        if (allPendingDishes.length === 0) {
+            res.status(200).json({
+                success: true,
+                message: "No pending dish is found",
+                allPendingDishes: []
+
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "Pending dishes retrived successfully.",
+                allPendingDishes
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function logoutUser(req, res) {
+    try {
+        const authHeader = req.headers["authorization"]
+        const token = authHeader & authHeader.split(" ")[1]
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "No token provided, cannot logout"
+            })
+        }
+
+        await redisClient.set(`blacklist:${token}`, true, { EX: 1800 })
+
+        res.status(200).json({
+            success: true,
+            message: "Logged out successfully."
+        })
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
