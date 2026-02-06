@@ -13,6 +13,7 @@ import { deleteStaffInviteToken, getStaffIdFromToken } from "../config/token.js"
 import { saveOTP, verifyOTP } from "../config/Otp.js"
 import { sendOtpForFogottenPassword, sendResetLinkForForgottenPassword } from "../config/email.js"
 import Review from "../models/Review.js"
+import order from "../models/Order.js"
 
 
 export async function staffProperSignUp(req, res) {
@@ -236,19 +237,6 @@ export async function staffChangePicture(req, res) {
             }
         }
     }
-    catch (err) {
-        logger.error("Server internal error", err)
-        res.status(500).json({
-            success: false,
-            message: "Server internal error."
-        })
-    }
-}
-
-
-export async function manageOrder(req, res) {
-    logger.info("Staff manage order endpoint hitted.")
-    try { }
     catch (err) {
         logger.error("Server internal error", err)
         res.status(500).json({
@@ -522,6 +510,47 @@ export async function getAllReviewsFromAllUsers(req, res) {
                 allReviews
             })
         }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+
+
+export async function manageOrder(req, res) {
+    logger.info("Staff manage order endpoint hitted.")
+    try { }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function getAllOrders(req, res) {
+    logger.info("Staff get all orders endpoint hitted.")
+    try {
+        const orders = await order.find()
+            .populate("customer", "username email firstName")
+            .populate("items.dish", "name price image")
+            .sort({ createdAt: -1 })
+
+        res.status(200).json({
+            success: true,
+            message: "Orders fecthed successfully.",
+            totalOrders: orders.length,
+            orders
+        })
+
     }
     catch (err) {
         logger.error("Server internal error", err)

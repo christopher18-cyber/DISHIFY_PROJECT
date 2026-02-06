@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUserCon, loginUserCon, userDashBoardCon, userSubmitReview, changeProfilepictureCon, userDeleteAccount, userUploadProfileCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon } from "../controllers/userController.js";
+import { registerUserCon, loginUserCon, userDashBoardCon, userSubmitReview, changeProfilepictureCon, userDeleteAccount, userUploadProfileCon, forgottenPasswordCon, changePasswordCon, sendSignupOtp, verifyOTPForForgottenPasswordCon, verifyOTPCon, sendOtpForFogottenPasswordCon, orderPageCon, getAllCarts } from "../controllers/userController.js";
 import { authMiddleware, attachEmailMiddleware } from "../middleware/auth-middleware.js";
 import { uploadMiddleware } from "../middleware/upload-middleware.js";
 
@@ -30,3 +30,7 @@ userRouter.put("/change-profile-picture", authMiddleware, uploadMiddleware.singl
 userRouter.delete("/delete-account", authMiddleware, userDeleteAccount)
 
 userRouter.post("/submit-review", authMiddleware, userSubmitReview)
+
+userRouter.post("/order-dishes", authMiddleware, orderPageCon)
+
+userRouter.post("/get-all-carts", authMiddleware, getAllCarts)

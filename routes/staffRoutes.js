@@ -1,6 +1,6 @@
 import express from "express";
 import { isStaffUser } from "../middleware/staff-middleware.js";
-import { forgottenPasswordConForStaff, postDishes, staffChangePassword, staffChangePicture, staffDashboard, staffProperSignUp, staffUploadProfileCon, verifyOTPForStaffForgottenPassword, sendOtpForStaff, getAllReviewsFromAllUsers } from "../controllers/staffControllers.js";
+import { forgottenPasswordConForStaff, postDishes, staffChangePassword, staffChangePicture, staffDashboard, staffProperSignUp, staffUploadProfileCon, verifyOTPForStaffForgottenPassword, sendOtpForStaff, getAllReviewsFromAllUsers, getAllOrders } from "../controllers/staffControllers.js";
 import { authMiddleware } from "../middleware/auth-middleware.js";
 import { uploadMiddleware } from "../middleware/upload-middleware.js";
 
@@ -21,3 +21,5 @@ staffRoutes.post("/reset-password", forgottenPasswordConForStaff)
 staffRoutes.post("/change-password", authMiddleware, isStaffUser, staffChangePassword)
 
 staffRoutes.get("/get-reviews", authMiddleware, isStaffUser, getAllReviewsFromAllUsers)
+
+staffRoutes.get("/get-orders", authMiddleware, isStaffUser, getAllOrders)

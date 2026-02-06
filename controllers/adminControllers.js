@@ -4,12 +4,8 @@ import UserImage from "../models/UserImage.js"
 import User from "../models/User.js"
 import Dish from "../models/Dish.js"
 import Review from "../models/Review.js"
-import * as crypto from "crypto"
-import redisClient from "../config/redis.js"
-import { validateLoginUser, validateRegisterUserSchema } from "../validators/userValidator.js"
+import order from "../models/Order.js"
 import { registerStaffSchema } from "../validators/staffValidator.js"
-import { sendOTPEmail } from "../config/email.js"
-import { sendInviteLinkStaffSignup } from "../config/Otp.js"
 import { sendInviteLinkForStaffSignup } from "../config/email.js"
 import { storeStaffInviteToken } from "../config/token.js"
 
@@ -251,7 +247,7 @@ export async function getAllReviewsFromAllUsers(req, res) {
         if (!allReviews) {
             res.status(200).json({
                 success: true,
-                message: "No post is found."
+                message: "No review is found from any user."
             })
         } else {
             res.status(200).json({
@@ -260,6 +256,31 @@ export async function getAllReviewsFromAllUsers(req, res) {
                 allReviews
             })
         }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error."
+        })
+    }
+}
+
+
+export async function getAllOrders(req, res) {
+    logger.info("admin get all orders endpoint hitted.")
+    try {
+        const orders = await order.find()
+            .populate("customer", "username email firstName")
+            .populate("items.dish", "name price image")
+            .sort({ createdAt: -1 })
+
+        res.status(200).json({
+            success: true,
+            message: "Orders fecthed successfully.",
+            totalOrders: orders.length,
+            orders
+        })
     }
     catch (err) {
         logger.error("Server internal error", err)

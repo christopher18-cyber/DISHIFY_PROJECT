@@ -14,6 +14,7 @@ import { sendOTPEmail, sendOtpForFogottenPassword, sendResetLinkForForgottenPass
 import redisClient from "../config/redis.js";
 import cloudinary from "../config/cloudinary.js";
 import Review from "../models/Review.js";
+import order from "../models/Order.js";
 
 export async function sendSignupOtp(req, res) {
     logger.info("Beginning of registration started.")
@@ -455,18 +456,6 @@ export async function userDashBoardCon(req, res) {
 }
 
 
-export async function orderPageCon(req, res) {
-    logger.info("User Order endpoint hitted.")
-    try { }
-    catch (err) {
-        logger.error("Server internal error", err)
-        res.status(500).json({
-            success: false,
-            message: "Server internal error"
-        })
-    }
-}
-
 export async function userUploadProfileCon(req, res) {
     logger.info("User upload image endpoint hitted")
     try {
@@ -618,6 +607,85 @@ export async function userSubmitReview(req, res) {
             res.status(200).json({
                 success: true,
                 message: "Review submitted successfully."
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+export async function getAllCarts(req, res) {
+    logger.info("User, get all carts endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+
+        const allOrderedDish = await order.find({ customer: userId })
+        if (!allOrderedDish) {
+            res.status(200).json({
+                success: true,
+                message: "No order is found"
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "All orders returned successfully.",
+                allOrderedDish
+            })
+        }
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+
+export async function deleteOneOrder(req, res) {
+    logger.info("User, delete one order endpoint hitted")
+    try {
+        const userId = req.userInfo.userId
+
+        const { _id } = req.params
+
+        // const product = await order
+
+        // if ()
+    }
+    catch (err) {
+        logger.error("Server internal error", err)
+        res.status(500).json({
+            success: false,
+            message: "Server internal error"
+        })
+    }
+}
+
+export async function orderPageCon(req, res) {
+    logger.info("User Order endpoint hitted.")
+    try {
+        const userId = req.userInfo.userId
+
+        if (!userId) {
+            res.status(401).json({
+                message: "Unathorized user",
+                success: false
+            })
+        } else {
+
+            const allUserOrder = await order.find({ customer: userId })
+            res.status(200).json({
+                success: true,
+                message: "All your orders here",
+                allUserOrder
             })
         }
     }

@@ -1,4 +1,5 @@
 import logger from "../utils/logger.js"
+import Dish from "../models/Dish.js"
 
 export async function homeCon(req, res) {
     logger.info("Home page endpoint hitted")
