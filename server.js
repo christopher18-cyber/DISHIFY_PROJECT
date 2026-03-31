@@ -1,29 +1,27 @@
-import "dotenv/config"
-import express from "express"
-import { connectToDB } from "./database/db.js"
-import { userRouter } from "./routes/userRoutes.js"
-import { adminRoutes } from "./routes/adminRoutes.js"
-import helmet from "helmet"
+import "dotenv/config";
+import express from "express";
+import { connectToDB } from "./database/db.js";
+import { userRouter } from "./routes/userRoutes.js";
+import { adminRoutes } from "./routes/adminRoutes.js";
+import helmet from "helmet";
 // import Redis from "ioredis"
 // import rateLimit from "express-rate-limit"
-import { configCors } from "./middleware/cors.js"
-import logger from "./utils/logger.js"
-import errorHandler from "./middleware/errorHandler.js"
-import { connectRedis } from "./config/redis.js"
-import { staffRoutes } from "./routes/staffRoutes.js"
-const app = express()
+import { configCors } from "./middleware/cors.js";
+import logger from "./utils/logger.js";
+import errorHandler from "./middleware/errorHandler.js";
+import { connectRedis } from "./config/redis.js";
+import { staffRoutes } from "./routes/staffRoutes.js";
+const app = express();
 
+const PORT = process.env.PORT || 3000;
 
-const PORT = process.env.PORT || 3000
+connectToDB();
+app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(configCors());
 
-
-connectToDB()
-app.use(helmet())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(configCors())
-
-await connectRedis()
+await connectRedis();
 
 // const sensitivePoint = rateLimit({
 //     windowMs: 15 * 60 * 1000,
@@ -39,14 +37,14 @@ await connectRedis()
 //     }
 // })
 
-app.use(errorHandler)
+app.use(errorHandler);
 
-app.use("/api/user", userRouter)
+app.use("/api/user", userRouter);
 
-app.use("/api/admin", adminRoutes)
+app.use("/api/admin", adminRoutes);
 
-app.use("/api/staff", staffRoutes)
+app.use("/api/staff", staffRoutes);
 
 app.listen(PORT, () => {
-    logger.info(`Server now running on port ${PORT}`)
-})
+	logger.info(`Server now running on port ${PORT}`);
+});
