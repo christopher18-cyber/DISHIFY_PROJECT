@@ -11,7 +11,7 @@ export const saveOTP = async (email, otp) => {
     // expires in 5 minutes
 
     await redisClient.set(key, hashedOtp, {
-        EX: 300
+        ex: 300
     })
 }
 
@@ -48,5 +48,5 @@ export const sendInviteLinkStaffSignup = async (staff) => {
     const inviteToken = crypto.randomBytes(32).toString("hex")
     const redisKey = `staff:invite:${inviteToken}`
 
-    await redisClient.set(redisKey, staff._id.toString(), { EX: "" })
+    await redisClient.set(redisKey, staff._id.toString(), { ex: 6000 })
 }

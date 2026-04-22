@@ -7,7 +7,7 @@ export const storeStaffInviteToken = async (staffId) => {
     const token = generateToken()
     const key = `staff:invite:${token}`
 
-    await redisClient.set(key, staffId.toString(), { EX: INVITE_TIME })
+    await redisClient.set(key, staffId.toString(), { ex: INVITE_TIME })
 
     return {
         success: true,
