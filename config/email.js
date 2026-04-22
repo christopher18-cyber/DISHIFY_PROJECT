@@ -2,7 +2,7 @@ import transporter from "../utils/mail.js";
 
 export const sendOTPEmail = async (email, otp) => {
 	await transporter.sendMail({
-		from: `DISHIFY: <${process.env.EMAIL_USER}>`,
+		from: `DISHIFY <${process.env.EMAIL_USER}>`,
 		to: email,
 		subject: "Your OTP Code for sign up",
 		html: `
@@ -16,7 +16,7 @@ export const sendOTPEmail = async (email, otp) => {
 
 export const sendOtpForFogottenPassword = async (email, otp) => {
 	await transporter.sendMail({
-		from: `DISHIFY: <process.env.EMAIL_USER>`,
+		from: `DISHIFY <${process.env.EMAIL_USER}>`,
 		to: email,
 		subject: "Your OTP Code for forgotten password",
 		html: `
@@ -30,7 +30,7 @@ export const sendOtpForFogottenPassword = async (email, otp) => {
 
 export const sendResetLinkForForgottenPassword = async (email, resetToken) => {
 	await transporter.sendMail({
-		from: `DISHIFY: <process.env.EMAIL_USER>`,
+		from: `DISHIFY <${process.env.EMAIL_USER}>`,
 		to: email,
 		subject: "Reset Your Password",
 		html: `
@@ -44,7 +44,7 @@ export const sendResetLinkForForgottenPassword = async (email, resetToken) => {
 
 export const sendInviteLinkForStaffSignup = async (email, inviteLink) => {
 	await transporter.sendMail({
-		from: `DISHIFY: <process.env/EMAIL_USER>`,
+		from: `DISHIFY <${process.env.EMAIL_USER}>`,
 		to: email,
 		subject: "You are invited to join Dishify",
 		html: `
