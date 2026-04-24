@@ -6,7 +6,7 @@ const uri = process.env.MONGODB_URL
 export async function connectToDB() {
     try {
         await mongoose.connect(uri)
-        logger.info(`MongoDB connected successfully.`, mongoose.connection.name)
+        logger.info(`MongoDB connected successfully. URI: ${process.env.MONGODB_URL}`)
     }
     catch (err) {
         logger.error(`MongoDB connection failed.`, err)

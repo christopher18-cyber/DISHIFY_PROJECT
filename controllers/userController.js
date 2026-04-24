@@ -108,7 +108,13 @@ export async function registerUserCon(req, res) {
 
             const { firstName, lastName, username, email, password, role, phoneNo } = req.body
 
-            let user = await User.findOne({ $or: [{ email }, { phoneNo }, { username }] })
+
+            const orConditions = [{ email }, { username }]
+if (phoneNo) orConditions.push({ phoneNo })
+
+let user = await User.findOne({ $or: orConditions })
+
+            // let user = await User.findOne({ $or:})
 
 
             if (user) {
