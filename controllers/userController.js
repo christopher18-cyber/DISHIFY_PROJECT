@@ -100,7 +100,7 @@ export async function registerUserCon(req, res) {
         const { error } = validateRegisterUserSchema(req.body)
         if (error) {
             logger.warn("Valiidation error", error.message)
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: error.details?.[0]?.message || error.message
             })
@@ -113,7 +113,7 @@ export async function registerUserCon(req, res) {
 
             if (user) {
                 logger.warn("User already exist")
-                res.status(400).json({
+                return res.status(400).json({
                     success: false,
                     message: "User already exist."
                 })
@@ -121,7 +121,7 @@ export async function registerUserCon(req, res) {
 
                 const isEmailValid = await redisClient.get(`otp_verified:${email}`)
                 if (!isEmailValid) {
-                    res.status(400).json({
+                    return res.status(400).json({
                         success: false,
                         message: "Pls verify email before signing up"
                     })

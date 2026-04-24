@@ -5,7 +5,7 @@ const uri = process.env.MONGODB_URL
 
 export async function connectToDB() {
     try {
-        await mongoose.connect(uri, { dbName: "DISHIFY_DATABASE" })
+        await mongoose.connect(uri)
         logger.info(`MongoDB connected successfully.`)
     }
     catch (err) {
