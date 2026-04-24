@@ -2,9 +2,6 @@ import "dotenv/config"
 import { Redis } from "@upstash/redis";
 import logger from "../utils/logger.js";
 
-console.log("URL:", process.env.UPSTASH_REDIS_REST_URL)
-console.log("TOKEN:", process.env.UPSTASH_REDIS_REST_TOKEN)
-
 const redisClient = new Redis({
     url : process.env.UPSTASH_REDIS_REST_URL,
     token : process.env.UPSTASH_REDIS_REST_TOKEN
